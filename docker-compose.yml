@@ -1,0 +1,48 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:80"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+    volumes:
+      - storage-public:/app/storage/app/public
+      - storage-logs:/app/storage/logs
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - estatehub
+
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-estatehub}
+      MYSQL_USER: ${DB_USERNAME:-estatehub}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-estatehub}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-estatehub_root}
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-estatehub_root}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - estatehub
+
+volumes:
+  db-data:
+  storage-public:
+  storage-logs:
+
+networks:
+  estatehub:
+    driver: bridge

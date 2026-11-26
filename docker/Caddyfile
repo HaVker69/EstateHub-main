@@ -1,0 +1,17 @@
+{
+	frankenphp
+	order php_server before file_server
+}
+
+:80 {
+	root * /app/public
+
+	encode zstd gzip
+
+	file_server {
+		hide .env*
+		hide .git
+	}
+
+	php_server
+}
